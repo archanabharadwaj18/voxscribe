@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VoxScribe</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0e0e0e;
+      --surface: #161616;
+      --surface2: #1f1f1f;
+      --border: #2a2a2a;
+      --accent: #c8f135;
+      --accent2: #7b61ff;
+      --text: #f0f0f0;
+      --muted: #666;
+      --danger: #ff4f4f;
+      --red: #ff4f4f;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      min-height: 100vh;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 48px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 22px;
+      letter-spacing: -0.5px;
+    }
+
+    .logo span { color: var(--accent); }
+
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px;
+    }
+
+    .nav-tab {
+      padding: 8px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.2s;
+    }
+
+    .nav-tab.active {
+      background: var(--accent);
+      color: #0e0e0e;
+      font-weight: 500;
+    }
+
+    .main {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .page-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    .page-title span { color: var(--accent); }
+    .page-sub { color: var(--muted); font-size: 13px; margin-bottom: 40px; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus { border-color: var(--accent); }
+
+    .input-mode-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .mode-tab.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(200, 241, 53, 0.05);
+    }
+
+    .upload-area {
+      border: 1.5px dashed var(--border);
+      border-radius: 10px;
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .upload-area:hover, .upload-area.dragover {
+      border-color: var(--accent);
+      background: rgba(200, 241, 53, 0.04);
+    }
+
+    .upload-area input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-icon { font-size: 32px; margin-bottom: 12px; }
+    .upload-label { font-size: 14px; color: var(--muted); }
+    .upload-label strong { color: var(--accent); }
+
+    .file-selected {
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--accent);
+      display: none;
+    }
+
+    .record-area {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .record-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+    }
+
+    .record-btn:hover { border-color: var(--red); }
+
+    .record-btn.recording {
+      border-color: var(--red);
+      background: rgba(255, 79, 79, 0.1);
+      animation: pulse 1.2s ease infinite;
+    }
+
+    .record-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--red);
+      transition: all 0.2s;
+    }
+
+    .record-btn.recording .record-dot {
+      border-radius: 4px;
+      width: 22px;
+      height: 22px;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 79, 79, 0.3); }
+      50% { box-shadow: 0 0 0 12px rgba(255, 79, 79, 0); }
+    }
+
+    .record-label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+    }
+
+    .record-label.recording { color: var(--red); }
+
+    .record-timer {
+      font-size: 28px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      margin-bottom: 8px;
+      display: none;
+    }
+
+    .record-timer.active { display: block; color: var(--red); }
+
+    .recording-ready {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      background: rgba(200, 241, 53, 0.07);
+      border: 1px solid rgba(200, 241, 53, 0.2);
+      font-size: 13px;
+      color: var(--accent);
+      margin-top: 16px;
+    }
+
+    .recording-ready.show { display: flex; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #0e0e0e;
+      width: 100%;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .btn-primary:hover { background: #d4f547; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    .status {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 16px;
+    }
+
+    .status.loading {
+      display: flex;
+      background: rgba(123, 97, 255, 0.1);
+      border: 1px solid rgba(123, 97, 255, 0.3);
+      color: #b3a3ff;
+    }
+
+    .status.error {
+      display: flex;
+      background: rgba(255, 79, 79, 0.1);
+      border: 1px solid rgba(255, 79, 79, 0.3);
+      color: var(--danger);
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(123, 97, 255, 0.3);
+      border-top-color: #7b61ff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .results { display: none; margin-top: 28px; }
+
+    .result-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .result-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .result-header .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    .result-body {
+      padding: 20px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #ccc;
+    }
+
+    .result-body.transcript {
+      max-height: 220px;
+      overflow-y: auto;
+      font-size: 13px;
+    }
+
+    .result-body.transcript::-webkit-scrollbar { width: 4px; }
+    .result-body.transcript::-webkit-scrollbar-track { background: transparent; }
+    .result-body.transcript::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .points-list { list-style: none; }
+    .points-list li {
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      color: #ccc;
+      display: flex;
+      gap: 10px;
+    }
+    .points-list li:last-child { border-bottom: none; }
+    .points-list li::before { content: "->"; color: var(--accent); flex-shrink: 0; }
+
+    .meeting-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .meeting-item:hover { border-color: var(--accent); }
+
+    .meeting-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .meeting-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .meeting-date { font-size: 11px; color: var(--muted); }
+
+    .meeting-summary {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .meeting-detail { display: none; margin-top: 16px; }
+    .meeting-detail.open { display: block; }
+
+    .tag {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      background: rgba(200, 241, 53, 0.1);
+      color: var(--accent);
+      border: 1px solid rgba(200, 241, 53, 0.2);
+      margin-bottom: 16px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .animate { animation: fadeUp 0.4s ease forwards; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Vox<span>Scribe</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('new')">New Meeting</button>
+    <button class="nav-tab" onclick="switchTab('past')">Past Meetings</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <div class="page active" id="page-new">
+    <div class="page-title">Record.<br><span>Transcribe.</span> Act.</div>
+    <div class="page-sub">Upload or record your meeting audio and get a full transcript, summary, and action items.</div>
+
+    <div class="card">
+      <label>Meeting Name</label>
+      <input type="text" id="meeting-name" placeholder="e.g. Product sync, Team standup..." />
+    </div>
+
+    <div class="card">
+      <label>Audio Input</label>
+      <div class="input-mode-tabs">
+        <button class="mode-tab active" onclick="switchMode('upload')" id="mode-upload">Upload File</button>
+        <button class="mode-tab" onclick="switchMode('record')" id="mode-record">Live Record</button>
+      </div>
+
+      <div id="panel-upload">
+        <div class="upload-area" id="upload-area">
+          <input type="file" id="file-input" accept=".wav,.mp3,.mp4" />
+          <div class="upload-icon">+</div>
+          <div class="upload-label"><strong>Click to upload</strong> or drag and drop</div>
+          <div class="upload-label" style="margin-top:4px; font-size:12px;">WAV or MP3 or MP4</div>
+        </div>
+        <div class="file-selected" id="file-selected"></div>
+      </div>
+
+      <div id="panel-record" style="display:none;">
+        <div class="record-area">
+          <div class="record-timer" id="record-timer">00:00</div>
+          <button class="record-btn" id="record-btn" onclick="toggleRecording()">
+            <div class="record-dot"></div>
+          </button>
+          <span class="record-label" id="record-label">Click to start recording</span>
+        </div>
+        <div class="recording-ready" id="recording-ready">
+          Recording ready. Enter a meeting name and click Process Meeting.
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="process-btn" onclick="processMeeting()" disabled>
+      Process Meeting
+    </button>
+
+    <div class="status loading" id="status-loading">
+      <div class="spinner"></div>
+      <span>Transcribing audio, this may take a few minutes...</span>
+    </div>
+
+    <div class="status error" id="status-error"></div>
+
+    <div class="results" id="results">
+        <div class="result-section animate">
+        <div class="result-header"><div class="dot"></div> Detected Language</div>
+        <div class="result-body" id="result-language"></div>
+    </div>
+      <div class="result-section animate">
+        <div class="result-header"><div class="dot"></div> Transcript</div>
+        <div class="result-body transcript" id="result-transcript"></div>
+      </div>
+      <div class="result-section animate" style="animation-delay:0.1s">
+        <div class="result-header"><div class="dot"></div> Summary</div>
+        <div class="result-body" id="result-summary"></div>
+      </div>
+      <div class="result-section animate" style="animation-delay:0.2s">
+        <div class="result-header"><div class="dot"></div> Key Points</div>
+        <div class="result-body">
+          <ul class="points-list" id="result-keypoints"></ul>
+        </div>
+      </div>
+      <div class="result-section animate" style="animation-delay:0.3s">
+        <div class="result-header"><div class="dot"></div> Action Items</div>
+        <div class="result-body">
+          <ul class="points-list" id="result-actions"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-past">
+    <div class="page-title">Past<br><span>Meetings</span></div>
+    <div class="page-sub">Browse and review your previous meeting transcripts and summaries.</div>
+    <input type="text" id="search-input" placeholder="Search meetings..." style="margin-bottom: 20px;" oninput="filterMeetings()" />
+    <div id="meetings-list"></div>
+  </div>
+
+</div>
+
+<script>
+  const API = 'http://localhost:8000';
+  let currentMode = 'upload';
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let recordedBlob = null;
+  let timerInterval = null;
+  let recordSeconds = 0;
+
+  function switchTab(tab) {
+    document.querySelectorAll('.nav-tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && tab === 'new') || (i === 1 && tab === 'past'));
+    });
+    document.getElementById('page-new').classList.toggle('active', tab === 'new');
+    document.getElementById('page-past').classList.toggle('active', tab === 'past');
+    if (tab === 'past') loadMeetings();
+  }
+
+  function switchMode(mode) {
+    currentMode = mode;
+    document.getElementById('mode-upload').classList.toggle('active', mode === 'upload');
+    document.getElementById('mode-record').classList.toggle('active', mode === 'record');
+    document.getElementById('panel-upload').style.display = mode === 'upload' ? 'block' : 'none';
+    document.getElementById('panel-record').style.display = mode === 'record' ? 'block' : 'none';
+    checkReady();
+  }
+
+  const fileInput = document.getElementById('file-input');
+  const meetingNameInput = document.getElementById('meeting-name');
+  const processBtn = document.getElementById('process-btn');
+
+  function checkReady() {
+    const hasName = meetingNameInput.value.trim().length > 0;
+    const hasFile = currentMode === 'upload' && fileInput.files.length > 0;
+    const hasRecording = currentMode === 'record' && recordedBlob !== null;
+    processBtn.disabled = !(hasName && (hasFile || hasRecording));
+  }
+
+  meetingNameInput.addEventListener('input', checkReady);
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files.length > 0) {
+      const sel = document.getElementById('file-selected');
+      sel.style.display = 'block';
+      sel.textContent = fileInput.files[0].name;
+    }
+    checkReady();
+  });
+
+  const uploadArea = document.getElementById('upload-area');
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+  uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    fileInput.files = e.dataTransfer.files;
+    fileInput.dispatchEvent(new Event('change'));
+  });
+
+  async function toggleRecording() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      stopRecording();
+    } else {
+      startRecording();
+    }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunks = [];
+      recordedBlob = null;
+
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+      mediaRecorder.onstop = () => {
+        recordedBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        stream.getTracks().forEach(t => t.stop());
+        document.getElementById('recording-ready').classList.add('show');
+        checkReady();
+      };
+
+      mediaRecorder.start();
+      document.getElementById('record-btn').classList.add('recording');
+      document.getElementById('record-label').textContent = 'Recording... click to stop';
+      document.getElementById('record-label').classList.add('recording');
+      document.getElementById('record-timer').classList.add('active');
+
+      recordSeconds = 0;
+      timerInterval = setInterval(() => {
+        recordSeconds++;
+        const m = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
+        const s = String(recordSeconds % 60).padStart(2, '0');
+        document.getElementById('record-timer').textContent = `${m}:${s}`;
+      }, 1000);
+
+    } catch (e) {
+      alert('Microphone access denied. Please allow microphone access and try again.');
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorder) mediaRecorder.stop();
+    clearInterval(timerInterval);
+    document.getElementById('record-btn').classList.remove('recording');
+    document.getElementById('record-label').textContent = 'Recording stopped.';
+    document.getElementById('record-label').classList.remove('recording');
+    document.getElementById('record-timer').classList.remove('active');
+  }
+
+  async function processMeeting() {
+    const name = meetingNameInput.value.trim();
+    if (!name) return;
+
+    processBtn.disabled = true;
+    document.getElementById('results').style.display = 'none';
+    document.getElementById('status-error').style.display = 'none';
+    document.getElementById('status-loading').style.display = 'flex';
+
+    const form = new FormData();
+    form.append('meeting_name', name);
+
+    let endpoint = '/upload';
+
+    if (currentMode === 'upload') {
+      const file = fileInput.files[0];
+      if (!file) return;
+      form.append('file', file);
+    } else {
+      if (!recordedBlob) return;
+      form.append('file', recordedBlob, 'recording.webm');
+      endpoint = '/record';
+    }
+
+    try {
+      const res = await fetch(`${API}${endpoint}`, { method: 'POST', body: form });
+      const data = await res.json();
+
+      document.getElementById('status-loading').style.display = 'none';
+
+      if (!res.ok) {
+        const err = document.getElementById('status-error');
+        err.style.display = 'flex';
+        err.textContent = data.error || 'Something went wrong.';
+        processBtn.disabled = false;
+        return;
+      }
+
+      document.getElementById('result-transcript').textContent = data.transcript;
+      document.getElementById('result-language').textContent = data.language + ' (' + data.language_confidence + '% confidence)';
+      document.getElementById('result-summary').textContent = data.summary;
+
+      const kp = document.getElementById('result-keypoints');
+      kp.innerHTML = '';
+      (data.key_points || []).forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = p;
+        kp.appendChild(li);
+      });
+
+      const ai = document.getElementById('result-actions');
+      ai.innerHTML = '';
+      (data.action_items || []).forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = p;
+        ai.appendChild(li);
+      });
+
+      document.getElementById('results').style.display = 'block';
+      processBtn.disabled = false;
+
+    } catch (e) {
+      document.getElementById('status-loading').style.display = 'none';
+      const err = document.getElementById('status-error');
+      err.style.display = 'flex';
+      err.textContent = 'Could not reach the API. Make sure the server is running.';
+      processBtn.disabled = false;
+    }
+  }
+
+  async function loadMeetings() {
+    const list = document.getElementById('meetings-list');
+    list.innerHTML = '<div class="empty-state">Loading...</div>';
+
+    try {
+      const res = await fetch(`${API}/meetings`);
+      const meetings = await res.json();
+
+      if (!meetings.length) {
+        list.innerHTML = '<div class="empty-state">No meetings yet. Process one to get started.</div>';
+        return;
+      }
+
+      list.innerHTML = '';
+      meetings.forEach(m => {
+        const div = document.createElement('div');
+        div.className = 'meeting-item';
+        div.innerHTML = `
+          <div class="meeting-meta">
+            <div class="meeting-name">${m.name}</div>
+            <div class="meeting-date">${m.date}</div>
+          </div>
+          <div class="meeting-summary">${m.summary || 'No summary available.'}</div>
+          <div class="meeting-detail" id="detail-${m._id}"></div>
+        `;
+        div.addEventListener('click', () => toggleDetail(m._id));
+        list.appendChild(div);
+      });
+    } catch (e) {
+      list.innerHTML = '<div class="empty-state">Could not load meetings.</div>';
+    }
+  }
+
+  async function toggleDetail(id) {
+    const el = document.getElementById(`detail-${id}`);
+    if (el.classList.contains('open')) {
+      el.classList.remove('open');
+      return;
+    }
+    if (el.innerHTML) { el.classList.add('open'); return; }
+
+    el.innerHTML = 'Loading...';
+    el.classList.add('open');
+
+    const res = await fetch(`${API}/meetings/${id}`);
+    const m = await res.json();
+
+    el.innerHTML = `
+      <div class="tag">Full Details</div>
+      <div style="font-size:13px; color:#ccc; line-height:1.7; margin-bottom:16px; max-height:180px; overflow-y:auto;">${m.transcript}</div>
+      <div style="font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-bottom:8px;">Key Points</div>
+      <ul class="points-list" style="margin-bottom:16px;">
+        ${(m.key_points || []).map(p => `<li>${p}</li>`).join('')}
+      </ul>
+      <div style="font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:var(--muted); margin-bottom:8px;">Action Items</div>
+      <ul class="points-list">
+        ${(m.action_items || []).map(p => `<li>${p}</li>`).join('')}
+      </ul>
+    `;
+  }
+  function filterMeetings() {
+  const query = document.getElementById('search-input').value.toLowerCase();
+  const items = document.querySelectorAll('.meeting-item');
+  items.forEach(item => {
+    const name = item.querySelector('.meeting-name').textContent.toLowerCase();
+    const summary = item.querySelector('.meeting-summary').textContent.toLowerCase();
+    item.style.display = (name.includes(query) || summary.includes(query)) ? 'block' : 'none';
+  });
+}
+</script>
+</body>
+</html>

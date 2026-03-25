@@ -1,0 +1,5 @@
+streamlit
+faster-whisper
+pyannote.audio
+groq
+python-dotenv
