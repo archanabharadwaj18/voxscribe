@@ -24,6 +24,15 @@ with tab1:
                 result = response.json()
                 st.success("Meeting processed and saved.")
 
+                st.subheader("Language")
+                st.write(f"{result['language']} ({result['language_confidence']}%)")
+
+                st.subheader("Speaker-wise Transcript")
+                for seg in result["segments"]:
+                    speaker = seg.get("speaker", "Speaker 1")
+                    text = seg.get("text", "")
+                    st.markdown(f"**{speaker}:** {text}")
+                
                 st.subheader("Transcript")
                 st.write(result["transcript"])
 
@@ -43,7 +52,7 @@ with tab1:
 with tab2:
     st.subheader("Past Meetings")
     
-    if st.button("Refresh"):
+    if st.button("Refresh List"):
         st.rerun()
 
     response = requests.get(f"{API_URL}/meetings")
@@ -53,15 +62,42 @@ with tab2:
             st.write("No past meetings found.")
         else:
             for m in meetings:
-                with st.expander(f"{m['name']} - {m['date']}"):
-                    st.write(m["summary"])
-                    if st.button("View full details", key=f"view_{m['_id']}"):
-                        full = requests.get(f"{API_URL}/meetings/{m['_id']}").json()
-                        st.write("Transcript:")
+                m_id = m['_id']
+                
+                with st.expander(f" {m['name']} ({m['date']})"):
+                    new_name = st.text_input("Change Meeting Name", value=m['name'], key=f"edit_input_{m_id}")
+                    if st.button("Update Name", key=f"update_btn_{m_id}"):
+                        edit_resp = requests.put(f"{API_URL}/meetings/{m_id}?new_name={new_name}")
+                        if edit_resp.status_code == 200:
+                            st.success("Name updated!")
+                            st.rerun()
+                    
+                    st.divider()
+
+                    if st.button("View full details", key=f"view_{m_id}"):
+                        full = requests.get(f"{API_URL}/meetings/{m_id}").json()
+                        st.write("**Summary:**")
+                        st.write(full["summary"])
+
+                        st.write("**Language:**")
+                        st.write(f"{full['language']} ({full['language_confidence']}%)")
+
+                        st.write("**Speaker-wise Transcript:**")
+                        for seg in full.get("segments", []):
+                            speaker = seg.get("speaker", "Speaker 1")
+                            text = seg.get("text", "")
+                            st.markdown(f"**{speaker}:** {text}")
+
+                        st.write("**Transcript:**")
                         st.write(full["transcript"])
-                        st.write("Key Points:")
-                        for kp in full["key_points"]:
-                            st.write("- " + kp)
-                        st.write("Action Items:")
-                        for ai in full["action_items"]:
-                            st.write("- " + ai)
+
+          
+                    with st.popover(" Delete Meeting"):
+                        st.warning("Are you sure? This cannot be undone.")
+                        if st.button("Confirm Delete", key=f"confirm_del_{m_id}"):
+                            del_resp = requests.delete(f"{API_URL}/meetings/{m_id}")
+                            if del_resp.status_code == 200:
+                                st.toast(f"Deleted {m['name']}")
+                                st.rerun()
+    else:
+        st.error("Could not load meetings.")

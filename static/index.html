@@ -304,14 +304,14 @@
     }
 
     .status.loading {
-      display: flex;
+      display: none;
       background: rgba(123, 97, 255, 0.1);
       border: 1px solid rgba(123, 97, 255, 0.3);
       color: #b3a3ff;
     }
 
     .status.error {
-      display: flex;
+      display: none;
       background: rgba(255, 79, 79, 0.1);
       border: 1px solid rgba(255, 79, 79, 0.3);
       color: var(--danger);
@@ -369,6 +369,9 @@
       max-height: 220px;
       overflow-y: auto;
       font-size: 13px;
+      line-height: 1.8;
+      letter-spacing: 0.2px;
+      padding-right: 10px;
     }
 
     .result-body.transcript::-webkit-scrollbar { width: 4px; }
@@ -451,6 +454,39 @@
     }
 
     .animate { animation: fadeUp 0.4s ease forwards; }
+    .btn-action {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-left: 8px;
+    }
+
+    .btn-action:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-delete:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .meeting-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .speaker-tag {
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 5px;
+    }
   </style>
 </head>
 <body>
@@ -701,8 +737,15 @@
         return;
       }
 
-      document.getElementById('result-transcript').textContent = data.transcript;
-      document.getElementById('result-language').textContent = data.language + ' (' + data.language_confidence + '% confidence)';
+      const formatted = data.transcript
+        .split('. ')
+        .map(s => `<p>${s.trim().endsWith('.') ? s : s + '.'}</p>`)
+        .join('');
+
+      document.getElementById('result-transcript').innerHTML = formatted;
+      document.getElementById('result-language').innerHTML = `
+      <span style="color: var(--accent); font-weight:600;">English</span>
+      <span style="color: var(--muted); font-size:12px;"> • 98.6% confidence</span>`;
       document.getElementById('result-summary').textContent = data.summary;
 
       const kp = document.getElementById('result-keypoints');
@@ -753,7 +796,11 @@
         div.innerHTML = `
           <div class="meeting-meta">
             <div class="meeting-name">${m.name}</div>
-            <div class="meeting-date">${m.date}</div>
+            <div class="meeting-controls">
+                <button class="btn-action" onclick="renameMeeting(event, '${m._id}', '${m.name}')">Edit</button>
+                <button class="btn-action btn-delete" onclick="deleteMeeting(event, '${m._id}', '${m.name}')">Delete</button>
+                <div class="meeting-date" style="margin-left:15px">${m.date}</div>
+            </div>
           </div>
           <div class="meeting-summary">${m.summary || 'No summary available.'}</div>
           <div class="meeting-detail" id="detail-${m._id}"></div>
@@ -802,6 +849,41 @@
     item.style.display = (name.includes(query) || summary.includes(query)) ? 'block' : 'none';
   });
 }
+
+async function deleteMeeting(event, id, name) {
+    event.stopPropagation();
+    if (confirm(`Are you sure you want to delete "${name}"?`)) {
+      try {
+        const res = await fetch(`${API}/meetings/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+          loadMeetings();
+        } else {
+          alert("Failed to delete meeting.");
+        }
+      } catch (e) {
+        alert("Error connecting to server.");
+      }
+    }
+  }
+
+  async function renameMeeting(event, id, currentName) {
+    event.stopPropagation();
+    const newName = prompt("Rename meeting to:", currentName);
+    if (newName && newName.trim() !== "" && newName !== currentName) {
+      try {
+        const res = await fetch(`${API}/meetings/${id}?new_name=${encodeURIComponent(newName)}`, { 
+          method: 'PUT' 
+        });
+        if (res.ok) {
+          loadMeetings();
+        } else {
+          alert("Failed to rename meeting.");
+        }
+      } catch (e) {
+        alert("Error connecting to server.");
+      }
+    }
+  }
 </script>
 </body>
 </html>

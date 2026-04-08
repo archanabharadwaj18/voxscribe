@@ -1,5 +1,13 @@
-streamlit
-faster-whisper
-pyannote.audio
+fastapi
+uvicorn
 groq
+python-multipart
 python-dotenv
+requests
+pymongo
+faster-whisper
+simple-diarizer
+speechbrain
+huggingface_hub<0.25.0
+torchaudio<=2.2.0
+openai

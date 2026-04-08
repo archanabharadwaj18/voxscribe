@@ -5,12 +5,12 @@ def create_jira_tasks(action_items, jira_url, username, api_token, project_key):
     created_keys = []
     
     for item in action_items:
-        # Create the task
+        
         new_issue = jira.create_issue(
             project=project_key,
             summary=item[:255],
             description=item,
-            issuetype={'name': 'Task'} # Blue Square with Tick!
+            issuetype={'name': 'Task'} 
         )
         created_keys.append(new_issue.key)
         print(f"Sent to Jira: {new_issue.key}")

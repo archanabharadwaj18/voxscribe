@@ -7,7 +7,7 @@ load_dotenv()
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 def generate_summary(transcript_text):
-    prompt = f"""You are a meeting assistant. Given the following meeting transcript, provide:
+    prompt = f"""You are a meeting assistant. Given the following meeting transcript (which includes [Speaker X] tags), provide:
 1. A concise summary (3-5 sentences)
 2. Key points discussed (bullet list)
 3. Action items if any (bullet list)
